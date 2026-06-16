@@ -231,9 +231,14 @@ const modS=v=>{const m=modN(v);return(m>=0?'+':'')+m};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const genCode=()=>Math.random().toString(36).slice(2,8).toUpperCase();
 
-const LS='echo_v3';
+const LS='echo_v4';
 const lsGet=()=>{try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch{return{}}};
 const lsSave=d=>localStorage.setItem(LS,JSON.stringify(d));
+
+// Hasła — zmień na własne przed wdrożeniem
+const HASLO_GRACZA='Mamuty';
+const HASLO_MG='1q2w3e';
+const SESSION_ID='echo_main'; // stała nazwa sesji w Firebase
 
 const defChar=(name='Postać',player='Gracz',id=uid())=>({
   id,name,player,klasa:'Wojownik',rasa:'Człowiek',poziom:1,patron:'',
@@ -355,7 +360,7 @@ function TabCombat({c, set}) {
         <div style={{fontFamily:'Cinzel,serif',fontSize:22,color:'var(--cream)',fontWeight:700,textAlign:'center'}}>{total>=0?'+'+total:total}</div>
         <div className="stat-lbl">{label}</div>
         <div className="sep"/>
-        <Field label="Bonus dodatkowy"><NI value={extra} onChange={v=>set(key,v)} min={-10} max={20}/></Field>
+        <Field label="Bonus dodatkowy"><NI value={extra} onChange={v=>set(stateKey,v)} min={-10} max={20}/></Field>
       </div>
     );
   };
@@ -921,59 +926,41 @@ function CharSheet({char, onUpdate}) {
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function Login({onJoin}) {
-  const [mode,setMode]=useState(null);
-  const [code,setCode]=useState('');
-  const [name,setName]=useState('');
-  const [player,setPlayer]=useState('');
-  const [newCode]=useState(()=>genCode());
+  const [name, setName] = useState('');
+  const [haslo, setHaslo] = useState('');
+  const [error, setError] = useState('');
 
-  if(!mode) return (
+  const tryLogin = () => {
+    if(!name.trim()) { setError('Wpisz imię postaci.'); return; }
+    if(haslo === HASLO_MG) {
+      onJoin({type:'gm', charName:'', playerName:'MG', code: SESSION_ID});
+    } else if(haslo === HASLO_GRACZA) {
+      onJoin({type:'player', charName:name, playerName:name, code: SESSION_ID});
+    } else {
+      setError('Nieprawidłowe hasło.');
+    }
+  };
+
+  return (
     <div className="login-wrap">
       <div className="login-box">
         <div className="login-logo">ECHO</div>
         <p className="login-sub">System kart postaci</p>
-        <button className="btn bp w100" style={{marginBottom:8}} onClick={()=>setMode('new')}>Nowa postać</button>
-        <br/>
-        <button className="btn bg w100" style={{marginBottom:8}} onClick={()=>setMode('join')}>Dołącz do sesji</button>
-        <br/>
-        <button className="btn bg w100" style={{color:'var(--gold)'}} onClick={()=>setMode('gm')}>Widok MG</button>
-      </div>
-    </div>
-  );
-
-  const effectiveCode = mode==='gm' ? (code||newCode) : code;
-  return (
-    <div className="login-wrap">
-      <div className="login-box">
-        <div className="login-logo" style={{fontSize:22,marginBottom:20}}>
-          {mode==='new'?'Nowa postać':mode==='join'?'Dołącz do sesji':'Widok MG'}
+        <div className="fld" style={{marginBottom:8,textAlign:'left'}}>
+          <label>Imię postaci / nick</label>
+          <input type="text" value={name} placeholder="Twoje imię…"
+            onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&tryLogin()}
+            autoFocus/>
         </div>
-        {mode!=='gm' && <>
-          <div className="fld" style={{marginBottom:8,textAlign:'left'}}>
-            <label>Imię postaci</label>
-            <input type="text" value={name} placeholder="Imię bohatera…" onChange={e=>setName(e.target.value)} autoFocus/>
-          </div>
-          <div className="fld" style={{marginBottom:8,textAlign:'left'}}>
-            <label>Twój nick / imię</label>
-            <input type="text" value={player} placeholder="Imię gracza…" onChange={e=>setPlayer(e.target.value)}/>
-          </div>
-        </>}
         <div className="fld" style={{marginBottom:16,textAlign:'left'}}>
-          <label>{mode==='gm'?'Kod sesji (podeślij graczom)':'Kod sesji (od MG)'}</label>
-          <input type="text" value={effectiveCode}
-            placeholder={mode==='new'?'Opcjonalny — puste = offline':''}
-            onChange={e=>setCode(e.target.value.toUpperCase())}/>
+          <label>Hasło</label>
+          <input type="password" value={haslo} placeholder="Hasło gracza lub MG…"
+            onChange={e=>setHaslo(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&tryLogin()}/>
         </div>
-        <button className="btn bp w100" style={{marginBottom:8}} onClick={()=>onJoin({
-          type: mode==='gm'?'gm':'player',
-          charName: name||'Postać',
-          playerName: player||'Gracz',
-          code: effectiveCode||'OFFLINE'
-        })}>
-          {mode==='gm'?'Otwórz widok MG':'Wejdź'}
-        </button>
-        <br/>
-        <button className="btn bg w100" onClick={()=>setMode(null)}>← Wstecz</button>
+        {error && <p style={{color:'var(--red)',fontSize:13,marginBottom:12}}>{error}</p>}
+        <button className="btn bp w100" onClick={tryLogin}>Wejdź</button>
       </div>
     </div>
   );
@@ -1056,16 +1043,13 @@ function App() {
   if(!session) return <Login onJoin={handleJoin}/>;
 
   const dotCls='dot'+(syncStatus==='offline'?' offline':syncStatus==='saving'?' saving':'');
-  const copyCode=()=>navigator.clipboard?.writeText(session).catch(()=>{});
-
   const topbar=(
     <header className="topbar">
       <span className="logo">ECHO</span>
       <div className="topbar-r">
         <span className={dotCls} title={syncStatus==='saved'?'Zapisano':syncStatus==='saving'?'Zapisywanie…':'Offline — tryb lokalny'}/>
-        <span style={{color:'var(--muted)'}}>SESJA</span>
-        <span className="code-pill" onClick={copyCode} title="Kliknij aby skopiować">{session}</span>
-        <span>{role==='gm'?'⚔ MG':char?.name||''}</span>
+        <span style={{color:'var(--muted)',fontSize:10}}>{syncStatus==='saved'?'Zapisano':syncStatus==='saving'?'Zapisywanie…':'Lokalnie'}</span>
+        <span style={{color:'var(--gold)',fontFamily:'Cinzel,serif',fontSize:12}}>{role==='gm'?'⚔ Mistrz Gry':char?.name||''}</span>
         <button className="btn bg bsm" onClick={handleLogout}>Wyloguj</button>
       </div>
     </header>
