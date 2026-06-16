@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECHO — Karta Postaci</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--ink:#1C1C2E;--gold:#C9A84C;--gold2:#8B6914;--cream:#F5F0E8;--muted:#6B6580;--panel:#252538;--border:rgba(201,168,76,0.25);--red:#C84B4B;--purple:#7B5FC0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--cream);font-family:'Crimson Pro',serif;font-size:15px;line-height:1.5}
+.topbar{background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:.15em}
+.topbar-r{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.code-pill{background:rgba(201,168,76,.1);border:1px solid var(--border);padding:3px 9px;border-radius:4px;color:var(--gold);cursor:pointer}
+.dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;transition:background .3s}
+.dot.offline{background:var(--muted)}.dot.saving{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);padding:0 16px;gap:2px;overflow-x:auto}
+.tab{padding:10px 13px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.1em;color:var(--muted);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--cream)}.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.page{padding:20px;max-width:1100px;margin:0 auto}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media(max-width:660px){.g6{grid-template-columns:repeat(3,1fr)}.g3,.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:14px}
+.ct{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+input[type=text],input[type=number],select,textarea{background:rgba(0,0,0,.35);border:1px solid rgba(201,168,76,.18);border-radius:4px;color:var(--cream);font-family:'Crimson Pro',serif;font-size:14px;padding:7px 9px;width:100%;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+select option{background:var(--panel)}
+textarea{resize:vertical;min-height:70px}
+.attr-box{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+.attr-name{font-family:'Cinzel',serif;font-size:9px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase}
+.attr-mod{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);font-weight:500}
+.stat-big{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;margin-top:4px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.bar-lbl{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);width:28px;letter-spacing:.08em}
+.bar-wrap{flex:1;background:rgba(0,0,0,.5);border-radius:3px;height:9px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+.bar-fill{height:100%;border-radius:3px;transition:width .35s}
+.bar-pw{background:linear-gradient(90deg,#8B2020,#C84B4B)}
+.bar-pp{background:linear-gradient(90deg,#3D2B6E,#7B5FC0)}
+.bar-nums{font-family:'JetBrains Mono',monospace;font-size:12px;min-width:64px;text-align:right}
+.pm{width:26px;height:26px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--cream);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-family:'JetBrains Mono',monospace}
+.pm:hover{background:rgba(201,168,76,.2);color:var(--gold)}.pm.minus:hover{background:rgba(139,32,32,.3);color:var(--red)}
+.inum{background:none;border:none;color:inherit;font:inherit;text-align:center;padding:0;width:36px;outline:none}
+.sk-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.sk-cyc{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;transition:all .15s;flex-shrink:0}
+.sk-cyc.l1{background:rgba(201,168,76,.12);border-color:var(--gold);color:var(--gold)}
+.sk-cyc.l2{background:rgba(201,168,76,.28);border-color:var(--gold);color:var(--gold);font-weight:700}
+.ab-card{background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:5px;padding:11px;margin-bottom:9px}
+.ab-name{font-family:'Cinzel',serif;font-size:13px;color:var(--gold)}
+.ab-tags{margin-top:3px;display:flex;flex-wrap:wrap;gap:3px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid}
+.tg{color:var(--gold);border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.07)}
+.ta{color:#9B7FE8;border-color:rgba(155,127,232,.35);background:rgba(61,43,110,.18)}
+.tr{color:var(--red);border-color:rgba(200,75,75,.35);background:rgba(139,32,32,.12)}
+.ab-desc{font-size:12px;color:rgba(245,240,232,.72);margin-top:6px;line-height:1.5}
+.sp-card{background:rgba(61,43,110,.15);border:1px solid rgba(155,127,232,.2);border-radius:5px;padding:10px;margin-bottom:8px}
+.sp-meta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px}
+.inj-card{background:rgba(139,32,32,.12);border:1px solid rgba(200,75,75,.25);border-radius:5px;padding:10px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.inj-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.eq-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.slots-bar{height:5px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;margin-bottom:5px}
+.slots-fill{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:3px;transition:width .3s}
+.del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 3px;flex-shrink:0;transition:color .15s}
+.del:hover{color:var(--red)}
+.btn{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.1em;padding:7px 14px;border-radius:4px;cursor:pointer;transition:all .2s;border:1px solid;text-transform:uppercase}
+.bp{background:rgba(201,168,76,.13);border-color:var(--gold);color:var(--gold)}.bp:hover{background:rgba(201,168,76,.28)}
+.bg{background:none;border-color:var(--border);color:var(--muted)}.bg:hover{border-color:var(--gold);color:var(--gold)}
+.bsm{padding:4px 10px;font-size:10px}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:36px;width:100%;max-width:380px;text-align:center}
+.login-logo{font-family:'Cinzel',serif;font-size:36px;font-weight:700;color:var(--gold);letter-spacing:.2em;margin-bottom:6px}
+.login-sub{color:var(--muted);font-size:13px;font-style:italic;margin-bottom:28px}
+.gm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.gm-card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px}
+.gm-name{font-family:'Cinzel',serif;font-size:15px;color:var(--gold)}
+.gm-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+.sep{height:1px;background:var(--border);margin:12px 0}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.w100{width:100%}.italic{font-style:italic}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+
+// ── FIREBASE (loaded dynamically to avoid file:// CORS) ──────────────────────
+let firebaseDB = null;
+let fbSet = null;
+let fbRef = null;
+let fbOnValue = null;
+let fbOff = null;
+
+async function initFirebase() {
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
+    const { getDatabase, ref, set, onValue, off } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js");
+    const app = initializeApp({
+      apiKey: "AIzaSyDuNM-DFEDpfmPgipVWSSPIiRZA5vI6Izc",
+      authDomain: "echo-7e5e3.firebaseapp.com",
+      databaseURL: "https://echo-7e5e3-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "echo-7e5e3",
+      storageBucket: "echo-7e5e3.firebasestorage.app",
+      messagingSenderId: "404116068244",
+      appId: "1:404116068244:web:1770484d15d27866b6a181",
+    });
+    firebaseDB = getDatabase(app);
+    fbSet = set; fbRef = ref; fbOnValue = onValue; fbOff = off;
+    return true;
+  } catch(e) {
+    console.warn('Firebase unavailable (file:// mode), using localStorage only', e);
+    return false;
+  }
+}
+
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const CLASSES=['Wojownik','Barbarzyńca','Łotr','Łowca','Bard','Kleryk','Adept','Zaklinacz'];
+const RACES=['Człowiek','Aesur','Sylvar','Khaedryn','Nerathi','Ferryn','Dawi','Niziołek','Karnath','Nomarchia','Quratai','Ashkar','Vel'];
+const STRUNY=['Infernum','Arkanum','Vitum','Severum','Księga Ech'];
+const ATTRS=[{k:'sila',s:'SIŁ'},{k:'zrecznosc',s:'ZRE'},{k:'budowa',s:'BUD'},{k:'roztropnosc',s:'ROZ'},{k:'intelekt',s:'INT'},{k:'charyzma',s:'CHA'}];
+const ATTR_MAP={SIŁ:'sila',ZRE:'zrecznosc',BUD:'budowa',ROZ:'roztropnosc',INT:'intelekt',CHA:'charyzma'};
+const SKILLS=[
+  {k:'akrobatyka',l:'Akrobatyka',a:'ZRE'},{k:'atletyka',l:'Atletyka',a:'SIŁ'},
+  {k:'kuglarstwo',l:'Kuglarstwo',a:'ZRE'},{k:'ukrywanie',l:'Ukrywanie się',a:'ZRE'},
+  {k:'percepcja',l:'Percepcja',a:'ROZ'},{k:'przetrwanie',l:'Sztuka przetrwania',a:'ROZ'},
+  {k:'pobudki',l:'Wyczucie pobudek',a:'ROZ'},{k:'zwierzeta',l:'Post. ze zwierzętami',a:'ROZ'},
+  {k:'blef',l:'Blef',a:'CHA'},{k:'perswazja',l:'Perswazja',a:'CHA'},
+  {k:'zastraszanie',l:'Zastraszanie',a:'CHA'},{k:'wystepy',l:'Występy',a:'CHA'},
+  {k:'historia',l:'Historia',a:'INT'},{k:'natura',l:'Natura',a:'INT'},
+  {k:'religia',l:'Religia',a:'INT'},{k:'przeszukiwanie',l:'Przeszukiwanie',a:'INT'},
+  {k:'arkana',l:'Arkana',a:'INT'},{k:'wyczucie_strun',l:'Wyczucie Strun',a:'INT'},
+  {k:'rytualy',l:'Rytuały',a:'INT'},{k:'leczenie',l:'Leczenie',a:'INT'},
+  {k:'mechanika',l:'Mechanika',a:'INT'},
+];
+const INJURY_TYPES=['Lekka','Poważna','Śmiertelna'];
+const TYPY_AB=['ofensywna','defensywna','kontrolna','reaktywna','narracyjna','magiczna'];
+
+// Katalogi do wyboru
+const KATALOG_ZDOLNOSCI=[
+  {name:'Postawa Obronna',typ:'defensywna',koszt:'Szybka Akcja',cdr:'1 runda',opis:'Do początku następnej tury: +2 do KP albo +1 do KP i ignorujesz pierwszy status nałożony w tej turze.'},
+  {name:'Warta',typ:'reaktywna',koszt:'Reakcja',cdr:'1 runda',opis:'Gdy przeciwnik wejdzie w twój zasięg zwarcia po raz pierwszy w rundzie — możesz natychmiast wykonać atak wręcz.'},
+  {name:'Parowanie',typ:'reaktywna',koszt:'Reakcja',cdr:'1 runda',opis:'Po ogłoszeniu ataku wręcz przeciwko tobie: +2 do KP przeciwko temu atakowi. Wymaga broni w ręce.'},
+  {name:'Zasadzka Dystansowa',typ:'reaktywna',koszt:'Reakcja',cdr:'1 runda',opis:'Gdy przeciwnik wejdzie w twój zasięg skuteczny broni dystansowej — możesz natychmiast wykonać atak dystansowy.'},
+  {name:'Kontratak',typ:'reaktywna',koszt:'Reakcja',cdr:'—',opis:'Gdy wróg chybi atakiem wręcz przeciwko tobie, możesz natychmiast wykonać jeden atak wręcz. Raz na rundę.'},
+  {name:'Tarcza Ofiarna',typ:'reaktywna',koszt:'Reakcja',cdr:'Scena',opis:'Gdy sojusznik w twoim zasięgu zwarcia miałby otrzymać trafienie — przejmujesz je na siebie.'},
+  {name:'Furia',typ:'ofensywna',koszt:'Akcja',cdr:'Konflikt',opis:'Do końca konfliktu: +2 do rzutów obrażeń w zwarciu, ignorujesz pierwszy status nałożony w każdej turze. Nie możesz dobrowolnie wycofać się z walki — test Woli ST 14.'},
+  {name:'Szarża',typ:'ofensywna',koszt:'Akcja',cdr:'1 runda',opis:'Poruszasz się co najmniej 4 metry i atakujesz. +2 do AW i +1k6 do obrażeń. Cel mniejszy od ciebie: RO Wytrwałości ST 10+Siła albo Przewrócony.'},
+  {name:'Cios Niszczący',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:'Przy trafieniu: podwójne obrażenia. Przy chybieniu: tracisz Szybką Akcję w następnej turze.'},
+  {name:'Zamaszyty Cios',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:'Atakujesz szerokim zamachem bronią białą, obejmując stożek 3 m przed sobą. Osobny rzut AW dla każdego przeciwnika.'},
+  {name:'Atak Wirowy',typ:'ofensywna',koszt:'Akcja',cdr:'Konflikt',opis:'Atakujesz wszystkich przeciwników w twoim zasięgu zwarcia. Osobny rzut AW dla każdego. Obrażenia bez modyfikatorów.'},
+  {name:'Uderzenie Ogłuszające',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:'Przy trafieniu: normalne obrażenia i cel musi zdać RO Wytrwałości ST 10+Siła albo Ogłuszony do końca następnej tury.'},
+  {name:'Cios z Zaskoczenia',typ:'ofensywna',koszt:'Pasywna',cdr:'Raz na turę',opis:'Gdy atakujesz cel nieświadomy twojej obecności lub zajęty walką z kimś innym — +1k6 obrażeń.'},
+  {name:'Zniknięcie',typ:'kontrolna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Jeśli masz osłonę lub rozproszenie w pobliżu, możesz natychmiast ukryć się nawet w trakcie walki.'},
+  {name:'Prowokacja',typ:'kontrolna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Wyzywasz przeciwnika. Musi zdać RO Woli ST 10+Charyzma albo skupia się tylko na tobie — −2 do AW przeciwko innym.'},
+  {name:'Formacja Żółw',typ:'defensywna',koszt:'Pasywna',cdr:'—',opis:'Dopóki sojusznik sąsiaduje z tobą w zwarciu, wszyscy sąsiadujący sojusznicy mają +1 do KP.'},
+  {name:'Okazja',typ:'ofensywna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Gdy przeciwnik popełni błąd (chybi, Przewrócony, Ogłuszony) — możesz natychmiast wykonać atak lub zdolność ofensywną.'},
+  {name:'Precyzyjne Trafienie',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:'Przy trafieniu: ignorujesz redukcję obrażeń celu i zadajesz +1k8 obrażeń. Wymaga tury bez ruchu.'},
+  {name:'Znaczenie Celu',typ:'kontrolna',koszt:'Akcja',cdr:'Scena',opis:'Oznaczasz przeciwnika. Twoje ataki dystansowe ignorują lekką osłonę i redukują ciężką do lekkiej. Wiesz gdzie jest nawet jeśli się ukryje.'},
+  {name:'Zasadzka',typ:'kontrolna',koszt:'Akcja',cdr:'Konflikt',opis:'Przygotowujesz się przez 1 turę. Gdy atakujesz: +4 do AW i +2k6 do obrażeń. Wszyscy świadkowie tracą Szybką Akcję.'},
+  {name:'Inspiracja',typ:'narracyjna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Jeden sojusznik może przerzucić jeden dowolny test i wziąć lepszy wynik. Działa do końca jego następnej tury.'},
+  {name:'Słowa Zachęty',typ:'narracyjna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Jeden sojusznik który cię słyszy odzyskuje 1k6 PW. Działa tylko jeśli sojusznik jeszcze walczy.'},
+  {name:'Wymuszenie',typ:'narracyjna',koszt:'Akcja',cdr:'Scena',opis:'Test Perswazji lub Blef vs Wyczucie pobudek celu. Sukces: cel wykonuje jedno krótkie działanie które normalnie by podjął.'},
+  {name:'Zmiana Narracji',typ:'narracyjna',koszt:'Akcja',cdr:'Konflikt',opis:'Zmieniasz kontekst sceny słowem lub gestem. MG i ty ustalcie jeden fakt który staje się prawdą narracyjnie.'},
+  {name:'Demonstracja Wiary',typ:'narracyjna',koszt:'Akcja',cdr:'Konflikt',opis:'Deklarujesz zasadę swojej postaci. Wszyscy sojusznicy ignorują jeden aktywny status do końca następnej tury.'},
+  {name:'Stabilizacja',typ:'reaktywna',koszt:'Reakcja',cdr:'Scena',opis:'Gdy sojusznik miałby otrzymać ranę — rana zostaje zredukowana o jeden stopień. Ty otrzymujesz status Wyczerpany.'},
+  {name:'Kanalizacja',typ:'magiczna',koszt:'Akcja',cdr:'—',opis:'Rzucasz zaklęcie z posiadanej Struny normalnie.'},
+  {name:'Przeładowanie',typ:'magiczna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Zyskujesz 1 dodatkową Akcję wyłącznie na rzucenie czaru. Otrzymujesz +1k4 PP.'},
+  {name:'Rezonans Struny',typ:'magiczna',koszt:'Akcja',cdr:'Konflikt',opis:'Wzmacniasz następny czar: ignoruje KO, automatycznie trafia, lub +1k6 obrażeń. Generuje +2 PP ponad normalny koszt.'},
+  {name:'Wyładowanie',typ:'reaktywna',koszt:'Reakcja',cdr:'Scena',opis:'Gdy otrzymujesz obrażenia — fala energii biegłej Struny. Wszyscy w zasięgu zwarcia: 1k8 obrażeń magicznych. +1 PP.'},
+  {name:'Adaptacja Magiczna',typ:'magiczna',koszt:'Pasywna',cdr:'Raz na scenę',opis:'Gdy czar nie przyniesie efektu — możesz natychmiast przekierować energię na inny efekt z tej samej Struny.'},
+  {name:'Upust Krwi',typ:'ofensywna',koszt:'Szybka Akcja',cdr:'1 runda',opis:'Zadajesz sobie 1k8 obrażeń (ignoruje KP). Zyskujesz 1 dodatkową Akcję wyłącznie na atak lub zdolność ofensywną.'},
+  {name:'Krzyk Bojowy',typ:'narracyjna',koszt:'Szybka Akcja',cdr:'Scena',opis:'Sojusznicy: +1 do AW do końca następnej tury. Wrogowie w promieniu 6m: RO Woli ST 8+Charyzma albo −1 do AW przez 1 rundę.'},
+  {name:'Krzyk Terroru',typ:'kontrolna',koszt:'Akcja',cdr:'Konflikt',opis:'Wszyscy wrogowie w promieniu 9m: RO Woli ST 12+Charyzma. Porażka: Przerażony przez 1 minutę + tracą Szybką Akcję.'},
+];
+
+const KATALOG_CECH=[
+  {name:'Wytrzymały',opis:'+2 do PW na każdym poziomie.'},
+  {name:'Odporność na Ból',opis:'Gdy PW poniżej połowy: +1 do KP. Automatyczne, zawsze.'},
+  {name:'Berserker',opis:'Gdy PW poniżej ¼: +2 do rzutów obrażeń w zwarciu. Nie możesz dobrowolnie wycofać się bez testu Woli ST 12.'},
+  {name:'Biegłość z Toporami',opis:'+2 do AW z wszystkimi toporami. Krytyki zadają dodatkowe 1k4 obrażeń.'},
+  {name:'Biegłość z Mieczami',opis:'+2 do AW ze wszystkimi mieczami. Przy krytycznym trafieniu: dodatkowa kość lub status Krwawiący.'},
+  {name:'Biegłość z Łukami',opis:'+2 do AW ze wszystkimi łukami. Ataki z zasięgu skutecznego bez kar za ruch.'},
+  {name:'Biegłość z Kuszami',opis:'+2 do AW ze wszystkimi kuszami. Kuszę możesz przeładować jako Szybką Akcję.'},
+  {name:'Biegłość z Tarczami',opis:'+2 do KP z tarczy. Możesz parować bez CDR — raz na atak.'},
+  {name:'Biegłość z Walką bez Broni',opis:'Ataki bez broni: 1k6+Siła. Po trafieniu możesz próbować uchwycić cel (Szybka Akcja).'},
+  {name:'Biegłość z Bronią Drzewcową',opis:'+2 do AW z włócznią, halabardą, glewiną i pikiem. Atak okazji bez Szybkiej Akcji — raz na rundę.'},
+  {name:'Biegłość z Bronią Obuchową',opis:'+2 do AW z młotami i pałkami. Przy trafieniu: RO Wytrwałości ST 10+Siła albo Ogłuszony (CDR: raz na cel).'},
+  {name:'Biegłość z Bronią Palną',opis:'+2 do AW z bronią palną. Ataki ignorują lekką osłonę celu.'},
+  {name:'Kamienna Skóra',opis:'Naturalna redukcja obrażeń fizycznych: 1. Nie kumuluje się z Kością Redukcji pancerza.'},
+  {name:'Niezniszczalny',opis:'Gdy PW = 0 ale brak śmiertelnej rany — zostajesz z 1 PW. Raz na konflikt.'},
+  {name:'Czujny',opis:'Nigdy nie jesteś zaskoczony jako pierwszy. MG daje prywatny sygnał zanim sytuacja eskaluje.'},
+  {name:'Zimna Krew',opis:'W sytuacjach kryzysowych: +1 do wszystkich testów. Efekt pasywny.'},
+  {name:'Stalowa Wola',opis:'Raz na konflikt gdy nie zdasz RO Woli, możesz zdecydować że jednak go zdajesz.'},
+  {name:'Nieustraszony',opis:'Odporny na efekt Przerażony. Na strach narracyjny: +4 do RO Woli.'},
+  {name:'Krytyczny Instynkt',opis:'Krytyki przy 19-20 zamiast tylko przy 20. Przy nat. 20: rzucasz kość krytyczną dwa razy.'},
+  {name:'Precyzyjny Atak',opis:'Raz na turę gdy atakujesz cel zajęty walką z kimś innym: +2 do AW i +1k6 do obrażeń.'},
+  {name:'Wojownik Dwubroniowy',opis:'Atak słabszą ręką bez kary jako Szybka Akcja zamiast Akcji.'},
+  {name:'Ambidekster',opis:'Brak ręki dominującej. Ataki słabszą ręką bez kar. Dwie jednoręczne bez kary w tej samej turze.'},
+  {name:'Obrońca',opis:'Gdy sojusznik w twoim zasięgu jest atakowany: Reakcja −2 do AW atakującego. Raz na rundę.'},
+  {name:'Mistrz Manewrów',opis:'Testy konfliktu przy manewrach bojowych: +2. Udany manewr zawsze generuje Przewagę Taktyczną.'},
+  {name:'Wrażliwość Magiczna',opis:'Wyczuwasz napięcie Strun w promieniu 9m bez testu.'},
+  {name:'Stabilność Magiczna',opis:'Próg Przeciążenia o 2 wyższy. Efekty Przeciążenia o jeden stopień słabsze.'},
+  {name:'Gniew',opis:'Gdy świadomie zadajesz sobie obrażenia: +1 AW do końca konfliktu. Kumuluje się (max +4).'},
+  {name:'Odporność na Trucizny',opis:'RO Wytrwałości przeciw truciznom i chorobom z przerzutem. Efekty trucizn trwają połowę czasu.'},
+  {name:'Fotograficzna Pamięć',opis:'Testy Historii, Religii, Arkany dot. rzeczy których byłeś świadkiem — bez rzutu.'},
+  {name:'Intuicja',opis:'Raz na sesję: zapytaj MG czy coś "czuje się" bezpieczne/niebezpieczne/prawdziwe — dostaniesz szczerą odpowiedź.'},
+  {name:'Twardy jak Skała',opis:'W ciężkim pancerzu: redukujesz pierwsze obrażenia w każdej scenie o 3.'},
+  {name:'Łowca Potworów',opis:'Wybierz typ istot. +2 do AW i +1k6 do obrażeń przeciwko temu typowi.'},
+  {name:'Tropiciel',opis:'Zawsze znasz kierunek i odległość do istoty której ślady widziałeś w ciągu 24h. Nie możesz być zaskoczony w naturalnym terenie.'},
+  {name:'Sieć Kontaktów',opis:'W każdym większym osiedlu znasz kogoś przydatnego. Osoba zawsze istnieje — MG decyduje czego chce w zamian.'},
+  {name:'Charyzmatyczny Kłamca',opis:'Gdy kłamiesz i ktoś próbuje cię przejrzeć testem Wyczucia pobudek: cel ma −2 do testu.'},
+];
+const TAG_CLS={ofensywna:'tr',defensywna:'tg',kontrolna:'tg',reaktywna:'tg',narracyjna:'tg',magiczna:'ta'};
+const STRUNA_COL={Infernum:'#C84B4B',Arkanum:'#C9A84C',Vitum:'#4CAF50',Severum:'#9B7FE8','Księga Ech':'#A0A0C0'};
+const INJ_COL={Lekka:'var(--gold)',Poważna:'var(--red)',Śmiertelna:'#ff4444'};
+const INJ_DOT={Lekka:'#C9A84C',Poważna:'var(--red)',Śmiertelna:'#6B0000'};
+
+const modN=v=>Math.floor(((v||10)-10)/2);
+const modS=v=>{const m=modN(v);return(m>=0?'+':'')+m};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const genCode=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+
+const LS='echo_v3';
+const lsGet=()=>{try{return JSON.parse(localStorage.getItem(LS)||'{}')}catch{return{}}};
+const lsSave=d=>localStorage.setItem(LS,JSON.stringify(d));
+
+const defChar=(name='Postać',player='Gracz',id=uid())=>({
+  id,name,player,klasa:'Wojownik',rasa:'Człowiek',poziom:1,patron:'',
+  sila:10,zrecznosc:10,budowa:10,roztropnosc:10,intelekt:10,charyzma:10,
+  pw:12,pwMax:12,pp:0,ppMax:10,kp:10,aw:0,mz:0,
+  ro_refleks:0,ro_wytrwalosc:0,ro_wola:0,
+  skills:{},zdolnosci:[],zaklecia:[],ekwipunek:[],
+  bron_dominujaca:{name:'',opis:''},bron_niedominujaca:{name:'',opis:''},
+  pancerz:{name:'',kp_bonus:0,opis:''},
+  rany:[],statusy:'',cechy:[],bieglosci:'',historia:'',notatki:'',
+});
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function Field({label, children}) {
+  return <div className="fld"><label>{label}</label>{children}</div>;
+}
+function TI({value, onChange, placeholder=''}) {
+  return <input type="text" value={value||''} placeholder={placeholder} onChange={e=>onChange(e.target.value)}/>;
+}
+function NI({value, onChange, min=0, max=999, style={}}) {
+  return <input type="number" value={value||0} min={min} max={max} style={style} onChange={e=>onChange(+e.target.value)}/>;
+}
+function Sel({value, options, onChange}) {
+  return <select value={value} onChange={e=>onChange(e.target.value)}>
+    {options.map(o=>typeof o==='object'
+      ? <option key={o.v} value={o.v}>{o.l}</option>
+      : <option key={o} value={o}>{o}</option>
+    )}
+  </select>;
+}
+function TA({value, onChange, placeholder='', minH=70}) {
+  return <textarea value={value||''} placeholder={placeholder} style={{minHeight:minH}} onChange={e=>onChange(e.target.value)}/>;
+}
+
+function BarRow({label, cur, max, fillCls, onDec, onInc, setCur, setMax}) {
+  const pct=Math.max(0,Math.min(100,(cur/Math.max(1,max))*100));
+  const col=fillCls==='bar-pw'?'var(--red)':'var(--purple)';
+  return (
+    <div className="bar-row">
+      <span className="bar-lbl">{label}</span>
+      <div className="bar-wrap"><div className={`bar-fill ${fillCls}`} style={{width:pct+'%'}}/></div>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <button className="pm minus" onClick={onDec}>−</button>
+        <span className="bar-nums">
+          <input className="inum" type="number" value={cur} min={0} max={max} style={{color:col}}
+            onChange={e=>setCur(Math.max(0,Math.min(max,+e.target.value)))}/>
+          <span style={{color:'var(--muted)'}}>/</span>
+          <input className="inum" type="number" value={max} min={1} style={{color:'var(--muted)'}}
+            onChange={e=>setMax(Math.max(1,+e.target.value))}/>
+        </span>
+        <button className="pm" onClick={onInc}>+</button>
+      </div>
+    </div>
+  );
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function TabOverview({c, set}) {
+  return (
+    <div className="page">
+      <div className="card">
+        <div className="ct">Informacje podstawowe</div>
+        <div className="g3" style={{marginBottom:14}}>
+          <Field label="Imię postaci"><TI value={c.name} onChange={v=>set('name',v)}/></Field>
+          <Field label="Gracz"><TI value={c.player} onChange={v=>set('player',v)}/></Field>
+          <Field label="Patron"><TI value={c.patron} onChange={v=>set('patron',v)} placeholder="Nieokreślony…"/></Field>
+        </div>
+        <div className="g3">
+          <Field label="Klasa"><Sel value={c.klasa} options={CLASSES} onChange={v=>set('klasa',v)}/></Field>
+          <Field label="Rasa"><Sel value={c.rasa} options={RACES} onChange={v=>set('rasa',v)}/></Field>
+          <Field label="Poziom"><NI value={c.poziom} onChange={v=>set('poziom',v)} min={1} max={12}/></Field>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="ct">Atrybuty</div>
+        <div className="g6">
+          {ATTRS.map(a=>(
+            <div key={a.k} className="attr-box">
+              <span className="attr-name">{a.s}</span>
+              <input type="number" min={1} max={30} value={c[a.k]} onChange={e=>set(a.k,Math.max(1,Math.min(30,+e.target.value)))}
+                style={{background:'none',border:'none',color:'var(--cream)',fontFamily:'Cinzel,serif',fontSize:24,textAlign:'center',width:'100%',outline:'none'}}/>
+              <span className="attr-mod">{modS(c[a.k])}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="ct">Punkty życia & Przeciążenie</div>
+        <BarRow label="PW" cur={c.pw} max={c.pwMax} fillCls="bar-pw"
+          onDec={()=>set('pw',Math.max(0,c.pw-1))} onInc={()=>set('pw',Math.min(c.pwMax,c.pw+1))}
+          setCur={v=>set('pw',v)} setMax={v=>set('pwMax',v)}/>
+        <BarRow label="PP" cur={c.pp} max={c.ppMax} fillCls="bar-pp"
+          onDec={()=>set('pp',Math.max(0,c.pp-1))} onInc={()=>set('pp',Math.min(c.ppMax,c.pp+1))}
+          setCur={v=>set('pp',v)} setMax={v=>set('ppMax',v)}/>
+      </div>
+
+      <div className="card">
+        <div className="ct">Historia postaci</div>
+        <TA value={c.historia} onChange={v=>set('historia',v)} placeholder="Skąd pochodzi postać, motywacje, przeszłość…" minH={110}/>
+      </div>
+    </div>
+  );
+}
+
+function TabCombat({c, set}) {
+  const StatBig = ({label, value, color, onChange}) => (
+    <div className="stat-big">
+      <input type="number" value={value} onChange={e=>onChange(+e.target.value)}
+        style={{background:'none',border:'none',color,fontFamily:'Cinzel,serif',fontSize:28,textAlign:'center',width:'100%',outline:'none'}}/>
+      <div className="stat-lbl">{label}</div>
+    </div>
+  );
+  const RORow = ({label, stateKey, baseAttr}) => {
+    const base=modN(c[baseAttr]||10), extra=c[stateKey]||0, total=base+extra;
+    return (
+      <div className="stat-big">
+        <div style={{fontFamily:'Cinzel,serif',fontSize:22,color:'var(--cream)',fontWeight:700,textAlign:'center'}}>{total>=0?'+'+total:total}</div>
+        <div className="stat-lbl">{label}</div>
+        <div className="sep"/>
+        <Field label="Bonus dodatkowy"><NI value={extra} onChange={v=>set(key,v)} min={-10} max={20}/></Field>
+      </div>
+    );
+  };
+  const [injForm, setInjForm] = useState({typ:'Lekka',opis:''});
+  const rany = c.rany||[];
+  return (
+    <div className="page">
+      <div className="card">
+        <div className="ct">Statystyki bojowe</div>
+        <div className="g4" style={{marginBottom:14}}>
+          <StatBig label="KP" value={c.kp} color="var(--cream)" onChange={v=>set('kp',v)}/>
+          <StatBig label="AW" value={c.aw} color="var(--gold)" onChange={v=>set('aw',v)}/>
+          <StatBig label="Mz" value={c.mz} color="var(--purple)" onChange={v=>set('mz',v)}/>
+          <div className="stat-big">
+            <div style={{fontFamily:'Cinzel,serif',fontSize:22,color:'var(--cream)',fontWeight:700,textAlign:'center'}}>{modS(c.zrecznosc)}</div>
+            <div className="stat-lbl">INIT (ZRE)</div>
+          </div>
+        </div>
+        <div className="sep"/>
+        <div className="ct" style={{marginBottom:10}}>Rzuty obronne</div>
+        <div className="g3">
+          <RORow label="Refleks (ZRE)" stateKey="ro_refleks" baseAttr="zrecznosc"/>
+          <RORow label="Wytrwałość (BUD)" stateKey="ro_wytrwalosc" baseAttr="budowa"/>
+          <RORow label="Wola (ROZ)" stateKey="ro_wola" baseAttr="roztropnosc"/>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="ct">Aktywne statusy</div>
+        <TA value={c.statusy} onChange={v=>set('statusy',v)} placeholder="np. Ogłuszony, Unieruchomiony, Przerażony…" minH={60}/>
+      </div>
+
+      <div className="card">
+        <div className="ct">Rany</div>
+        {rany.length===0 && <p style={{color:'var(--muted)',fontStyle:'italic',fontSize:13,marginBottom:8}}>Brak ran</p>}
+        {rany.map(r=>(
+          <div key={r.id} className="inj-card">
+            <div className="inj-dot" style={{background:INJ_DOT[r.typ]}}/>
+            <div style={{flex:1,fontSize:13}}>
+              <span className="mono" style={{color:INJ_COL[r.typ],marginRight:8,fontSize:10}}>{r.typ}</span>
+              {r.opis}
+            </div>
+            <button className="del" onClick={()=>set('rany',rany.filter(x=>x.id!==r.id))}>×</button>
+          </div>
+        ))}
+        <div className="sep"/>
+        <div className="g2" style={{marginBottom:8}}>
+          <Field label="Typ rany"><Sel value={injForm.typ} options={INJURY_TYPES} onChange={v=>setInjForm({...injForm,typ:v})}/></Field>
+          <Field label="Opis"><TI value={injForm.opis} onChange={v=>setInjForm({...injForm,opis:v})} placeholder="np. Złamane żebra…"/></Field>
+        </div>
+        <button className="btn bp bsm" onClick={()=>{
+          if(!injForm.opis.trim())return;
+          set('rany',[...rany,{...injForm,id:uid()}]);
+          setInjForm({typ:'Lekka',opis:''});
+        }}>+ Dodaj ranę</button>
+      </div>
+    </div>
+  );
+}
+
+function TabSkills({c, set}) {
+  const skills=c.skills||{};
+  const cycle=k=>{const cur=skills[k]||0;set('skills',{...skills,[k]:(cur+1)%3})};
+  const bonus=s=>{const m=modN(c[ATTR_MAP[s.a]]||10);const lv=skills[s.k]||0;return lv===0?m-4:m+lv};
+  const lvCls=k=>{const l=skills[k]||0;return l===1?'l1':l===2?'l2':''};
+  const lvLbl=k=>{const l=skills[k]||0;return l===0?'—':l===1?'1':'★'};
+  return (
+    <div className="page">
+      <div className="card">
+        <div className="ct">Umiejętności</div>
+        <div className="mono" style={{color:'var(--muted)',fontSize:9,marginBottom:8}}>KLIKNIJ KÓŁKO: — nierozwinięta / 1 rozwinięta / ★ specjalizacja</div>
+        {SKILLS.map(s=>{
+          const b=bonus(s);
+          return (
+            <div key={s.k} className="sk-row">
+              <button className={`sk-cyc ${lvCls(s.k)}`} onClick={()=>cycle(s.k)}>{lvLbl(s.k)}</button>
+              <span style={{flex:1,fontSize:13}}>{s.l}</span>
+              <span className="mono" style={{color:'var(--muted)',fontSize:9,width:28}}>{s.a}</span>
+              <span className="mono" style={{color:b>=0?'var(--gold)':'var(--red)',minWidth:32,textAlign:'right',fontSize:12}}>{b>=0?'+'+b:b}</span>
+            </div>
+          );
+        })}
+        <div className="sep"/>
+        <div className="mono" style={{color:'var(--muted)',fontSize:9}}>Nierozwinięta = attr−4 | Rozwinięta = attr+poziom | Spec★ = przerzut raz na scenę</div>
+      </div>
+      <div className="card">
+        <div className="ct">Biegłości</div>
+        <TA value={c.bieglosci} onChange={v=>set('bieglosci',v)} placeholder="np. Biegłość z Mieczami, Biegłość z Łukami…" minH={80}/>
+      </div>
+    </div>
+  );
+}
+
+const KATALOG_ZAKLEC=[
+  // INFERNUM
+  {name:'Języki Ognia',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'2k6 obrażeń ognia. Cel z łatwopalnym materiałem może się zapalić (1k4 obrażeń na turę).'},
+  {name:'Iskra',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'1k6 obrażeń ognia. Może zapalić łatwopalne materiały.'},
+  {name:'Rozgrzanie',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Metalowy przedmiot nagrzewa się do białości. Trzymający: upuść albo 1k4 obrażeń na turę.'},
+  {name:'Tarcza Ciepła',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Odporność na zimno do końca sceny. W ekstremalnym zimnie: obrażenia od zimna o połowę.'},
+  {name:'Podmuch Żaru',struna:'Infernum',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Stożek 6m. RO Refleks. Porażka: 2k6 ognia. Łatwopalne materiały zapalają się.'},
+  {name:'Kula Ognia — Mała',struna:'Infernum',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Zasięg 36m, promień 3m. RO Refleks. 3k6 ognia, połowa przy sukcesie.'},
+  {name:'Fala Uderzeniowa',struna:'Infernum',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Promień 4m wokół ciebie. 1k8 obrażeń, odepchniecie 3m. RO Refleks za połowę.'},
+  {name:'Wyczucie Żaru',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Wyczuwasz żywe istoty przez ciepło ciała w promieniu 18m do końca sceny.'},
+  {name:'Kula Ognia',struna:'Infernum',ksiega:'II',koszt_pp:3,typ:'obszarowe',cdr:'—',opis:'Zasięg 45m, promień 6m. 8k6 ognia, połowa przy sukcesie RO Refleks.'},
+  {name:'Ściana Ognia',struna:'Infernum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'Scena',opis:'Do 18m długości, 6m wysokości. Przejście: 4k8 ognia. Blokuje widok i ruch.'},
+  {name:'Otoczka Ognia',struna:'Infernum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'Scena',opis:'Ataki wręcz w ciebie: 2k6 ognia dla atakującego. Twoje ataki wręcz: +1k6 ognia. Odporność na ogień.'},
+  {name:'Meteoryt',struna:'Infernum',ksiega:'II',koszt_pp:3,typ:'celowane',cdr:'—',opis:'6k6 ognia+kinetyczne. Przy trafieniu: cel Ogłuszony do końca następnej tury.'},
+  {name:'Deszcz Ognia',struna:'Infernum',ksiega:'III',koszt_pp:5,typ:'obszarowe',cdr:'Fabularny',opis:'Promień 18m przez 3 tury. 4k6 ognia na turę. Po zakończeniu: obszar w płomieniach.'},
+  {name:'Zniszczenie',struna:'Infernum',ksiega:'III',koszt_pp:6,typ:'celowane',cdr:'Fabularny',opis:'10k6+40 ognia. Jeśli cel ma ≤50 PW po obrażeniach — zostaje zniszczony bez ciała.'},
+  {name:'Meteor',struna:'Infernum',ksiega:'IV',koszt_pp:7,typ:'obszarowe',cdr:'Fabularny',opis:'1km zasięg, promień 36m. Każdy cel: 1k3 meteoryty × 6k6 ognia+kinetyczne. RO Refleks za jeden meteoryt.'},
+  // ARKANUM
+  {name:'Uderzenie Siłą',struna:'Arkanum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'1k10 obrażeń siłowych. Cel odepchnięty o 3m. Blokada: +1k4 obrażeń dla obu.'},
+  {name:'Kruszenie',struna:'Arkanum',ksiega:'I',koszt_pp:2,typ:'celowane',cdr:'—',opis:'1k8 obrażeń siłowych i status Osłabiony (KP −2 do końca sceny). Na obiektach: niszczy bez testu.'},
+  {name:'Wzmocnienie',struna:'Arkanum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'+2 do KP celu lub podwojona wytrzymałość obiektu do końca sceny.'},
+  {name:'Ruch Przedmiotu',struna:'Arkanum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Telekinetycznie poruszasz obiektem do 5kg. Jako improwizowana broń: 1k4+Mz obrażeń.'},
+  {name:'Paraliż Siłowy',struna:'Arkanum',ksiega:'I',koszt_pp:2,typ:'celowane',cdr:'—',opis:'Cel Unieruchomiony. Co turę: test Atletyki ST 10+Mz jako Akcja żeby się uwolnić.'},
+  {name:'Skała',struna:'Arkanum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'2k8 obrażeń kinetycznych. Skała pozostaje po rzucie.'},
+  {name:'Naprawa',struna:'Arkanum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Naprawia pęknięcia i drobne uszkodzenia obiektów nieożywionych.'},
+  {name:'Pole Siłowe',struna:'Arkanum',ksiega:'II',koszt_pp:2,typ:'efektowe',cdr:'Scena',opis:'Niewidzialna bariera do 9m. Wytrzymałość: 15+(Mz×3). Blokuje materię i energię kinetyczną.'},
+  {name:'Telekineza',struna:'Arkanum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'—',opis:'Poruszasz obiektami do 250kg. Na istotę: test konfliktu Mz vs Atletyka — 1k6 obrażeń na turę.'},
+  {name:'Kamienny Mur',struna:'Arkanum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'—',opis:'Ściana kamienia do 18m×6m. Solidna, nieprzeźroczysta. Trwa do zniszczenia.'},
+  {name:'Kula Siłowa',struna:'Arkanum',ksiega:'II',koszt_pp:4,typ:'celowane',cdr:'—',opis:'6k6 obrażeń siłowych ignorujących KP i redukcję fizyczną. Odepchniecie 6m + Przewrócony.'},
+  {name:'Rozerwanie',struna:'Arkanum',ksiega:'II',koszt_pp:3,typ:'celowane',cdr:'—',opis:'5k6 obrażeń siłowych. RO Wytrwałości albo rana (złamana kość, uszkodzony narząd).'},
+  {name:'Rozpad',struna:'Arkanum',ksiega:'III',koszt_pp:6,typ:'celowane',cdr:'Fabularny',opis:'10k6+40 obrażeń siłowych. Jeśli PW do 0 — cel obrócony w pył. Nie można wskrzesić normalnie.'},
+  {name:'Trzęsienie Ziemi',struna:'Arkanum',ksiega:'III',koszt_pp:6,typ:'obszarowe',cdr:'Fabularny',opis:'Promień 30m przez 1 minutę. RO Wytrwałości co turę albo Przewrócony. Budynki walą się.'},
+  // VITUM
+  {name:'Leczenie',struna:'Vitum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Cel odzyskuje 1k8+Mz PW. Na konstrukty/nieumarłych: obrażenia nekrotyczne. Nie usuwa ran.'},
+  {name:'Dotyk Skażenia',struna:'Vitum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'1k6 obrażeń nekrotycznych i status Osłabiony (−1 do testów fizycznych) do końca sceny.'},
+  {name:'Splątanie',struna:'Vitum',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Promień 6m. RO Wytrwałości. Porażka: Unieruchomiony 1 turę. Sukces: trudny teren. Wymaga organicznego terenu.'},
+  {name:'Trucizna',struna:'Vitum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Zatruwa jedzenie, wodę lub broń. RO Wytrwałości albo 2k4 nekrotyczne przez 3 tury + Osłabiony.'},
+  {name:'Przyśpieszenie Regeneracji',struna:'Vitum',ksiega:'I',koszt_pp:2,typ:'efektowe',cdr:'—',opis:'Cel odzyskuje 2 PW na początku każdej tury do końca sceny. Lekkie rany goją się w scenie.'},
+  {name:'Wyczucie Życia',struna:'Vitum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Wyczuwasz żywe istoty w promieniu 27m przez ściany, ciemność i wodę do końca sceny.'},
+  {name:'Masowe Leczenie',struna:'Vitum',ksiega:'II',koszt_pp:3,typ:'obszarowe',cdr:'—',opis:'Promień 9m. Sojusznicy: 2k8+Mz PW. Nieumarłe/konstrukty: 2k8 nekrotycznych (RO za połowę).'},
+  {name:'Zaraza',struna:'Vitum',ksiega:'II',koszt_pp:3,typ:'celowane',cdr:'—',opis:'RO Wytrwałości albo zarażony: 1k6 nekrotycznych na turę i −2 do testów fizycznych. Zaraźliwa.'},
+  {name:'Przywrócenie',struna:'Vitum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'—',opis:'Usuwa: trucizna, choroba, ślepota, głuchota, paraliż lub status narracyjny. Redukuje rany.'},
+  {name:'Wyssanie Życia',struna:'Vitum',ksiega:'II',koszt_pp:3,typ:'celowane',cdr:'—',opis:'4k6 nekrotycznych. Odzyskujesz połowę jako PW. Na nieumarłych: podwójne obrażenia, bez leczenia.'},
+  {name:'Wskrzeszenie',struna:'Vitum',ksiega:'III',koszt_pp:5,typ:'efektowe',cdr:'Fabularny',opis:'Przywraca życie istocie która zginęła w ciągu ostatniej godziny. Powraca z 1 PW i poważną raną.'},
+  {name:'Regeneracja',struna:'Vitum',ksiega:'III',koszt_pp:5,typ:'efektowe',cdr:'Fabularny',opis:'Przez 1 minutę: cel odzyskuje 10 PW na turę. Poważne rany goją się. Kończyny odrastają.'},
+  {name:'Prawdziwe Wskrzeszenie',struna:'Vitum',ksiega:'IV',koszt_pp:7,typ:'efektowe',cdr:'Fabularny',opis:'Przywraca życie bez ograniczenia czasowego. Wystarczy część ciała lub przedmiot należący do zmarłego.'},
+  {name:'Przekształcenie',struna:'Vitum',ksiega:'IV',koszt_pp:9,typ:'celowane',cdr:'Fabularny',opis:'RO Wytrwałości ST 16+Mz albo permanentna transformacja w formę życia. Świadomość zachowana.'},
+  // SEVERUM
+  {name:'Uderzenie Psychiczne',struna:'Severum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:'1k6 obrażeń psychicznych (ignoruje KP fizyczną). Status Zdezorientowany do końca następnej tury.'},
+  {name:'Iluzja',struna:'Severum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'Scena',opis:'Obraz lub dźwięk do rozmiaru człowieka. Kontakt fizyczny: automatyczne rozpoznanie.'},
+  {name:'Szept',struna:'Severum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Krótka wiadomość (25 słów) do umysłu wybranej istoty w zasięgu 100m. Może odpowiedzieć.'},
+  {name:'Przesunięcie',struna:'Severum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'Teleportujesz siebie lub przedmiot (rozmiar Średni) w widoczne miejsce w zasięgu 10m.'},
+  {name:'Fala Strachu',struna:'Severum',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Promień 6m. RO Woli. Porażka: Przerażony do końca sceny. Sukces: Zdezorientowany 1 rundę.'},
+  {name:'Telepatia',struna:'Severum',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'Scena',opis:'Dwukierunkowe połączenie telepatyczne z istotą którą widzisz do końca sceny.'},
+  {name:'Rozkaz',struna:'Severum',ksiega:'I',koszt_pp:2,typ:'celowane',cdr:'—',opis:'RO Woli albo cel wykonuje jeden krótki rozkaz natychmiast. Samobójcze: +4 do RO.'},
+  {name:'Wykrycie Myśli',struna:'Severum',ksiega:'I',koszt_pp:2,typ:'efektowe',cdr:'—',opis:'Przez 1 minutę: próba odczytu powierzchniowych myśli. RO Woli — cel wyczuwa próbę przy sukcesie.'},
+  {name:'Opętanie',struna:'Severum',ksiega:'II',koszt_pp:4,typ:'celowane',cdr:'Fabularny',opis:'RO Woli ST 12+Mz albo cel pod twoją kontrolą przez 1 godzinę. Pamięta wszystko po zakończeniu.'},
+  {name:'Psychiczna Eksplozja',struna:'Severum',ksiega:'II',koszt_pp:3,typ:'obszarowe',cdr:'—',opis:'Promień 6m. RO Woli. Porażka: 4k6 psychicznych + Ogłuszony do końca następnej tury.'},
+  {name:'Konfuzja',struna:'Severum',ksiega:'II',koszt_pp:4,typ:'obszarowe',cdr:'—',opis:'Promień 6m. RO Woli ST 12+Mz albo przez 1 minutę: losowe działania (1k4: atak losowy / nic / ucieczka / normalnie).'},
+  {name:'Wymazanie Wspomnień',struna:'Severum',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'Fabularny',opis:'Usuwa do 24h wspomnień celu. RO Woli ST 12+Mz. Cel nie wie że coś brakuje przy porażce.'},
+  {name:'Teleportacja',struna:'Severum',ksiega:'II',koszt_pp:5,typ:'efektowe',cdr:'Fabularny',opis:'Teleportujesz siebie i do 8 chętnych do dowolnego miejsca które dobrze znasz.'},
+  {name:'Labirynt',struna:'Severum',ksiega:'III',koszt_pp:5,typ:'celowane',cdr:'Fabularny',opis:'Cel znika do ekstrawymiaru. Test Intelektu ST 14+Mz raz na minutę żeby wrócić.'},
+  {name:'Dominacja',struna:'Severum',ksiega:'IV',koszt_pp:8,typ:'celowane',cdr:'Fabularny',opis:'RO Woli ST 16+Mz albo cel pod kontrolą przez 30 dni. Racjonalizuje działania jako własne.'},
+  // KSIĘGA ECH
+  {name:'Odpędzenie',struna:'Księga Ech',ksiega:'I',koszt_pp:2,typ:'obszarowe',cdr:'—',opis:'Promień 9m. RO Woli. Nieumarłe/demony: ucieczka przez 1 minutę lub Zdezorientowane.'},
+  {name:'Ochrona',struna:'Księga Ech',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'—',opis:'+2 do wszystkich RO celu do końca sceny.'},
+  {name:'Błogosławieństwo',struna:'Księga Ech',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'Scena',opis:'Jeden sojusznik może przerzucać jeden test per rundę i brać lepszy wynik.'},
+  {name:'Namaszczenie',struna:'Księga Ech',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'Scena',opis:'Broń sojusznika: +1k4 obrażeń promienistych. Na nieumarłe/demony: podwójne.'},
+  {name:'Sanktuarium',struna:'Księga Ech',ksiega:'I',koszt_pp:2,typ:'efektowe',cdr:'Scena',opis:'Każdy kto chce zaatakować cel: RO Woli ST 10+Mz. Porażka: musi wybrać inny cel. Kończy się gdy cel atakuje.'},
+  {name:'Egzorcyzm',struna:'Księga Ech',ksiega:'I',koszt_pp:3,typ:'celowane',cdr:'—',opis:'Kończy opętanie lub kontrolę magiczną. Na demony/nieumarłe: 4k8 obrażeń promienistych.'},
+  {name:'Słowo Mocy',struna:'Księga Ech',ksiega:'II',koszt_pp:3,typ:'celowane',cdr:'Konflikt',opis:'RO Woli ST 14+Charyzma. Stój (Unieruchomiony 1 min) / Śpij (Ogłuszony 1 min) / Uciekaj (Przerażony 1 min).'},
+  {name:'Masowe Wzmocnienie',struna:'Księga Ech',ksiega:'II',koszt_pp:3,typ:'obszarowe',cdr:'Scena',opis:'Promień 9m. Sojusznicy: 2k8+mod Roztropności PW. Nieumarłe/konstrukty: 2k8 promienistych.'},
+  {name:'Wykrycie Magii',struna:'Księga Ech',ksiega:'I',koszt_pp:1,typ:'efektowe',cdr:'Scena',opis:'Wyczuwasz magię w promieniu 18m do końca sceny. Wiesz która Struna jest obecna.'},
+  {name:'Światło',struna:'Księga Ech',ksiega:'I',koszt_pp:0,typ:'efektowe',cdr:'—',opis:'Dotykany obiekt emituje światło jak latarnia przez 1 godzinę.'},
+  {name:'Rozproszenie Magii',struna:'Księga Ech',ksiega:'I',koszt_pp:2,typ:'efektowe',cdr:'—',opis:'Test Arkany ST 10+Mz czarującego. Sukces: aktywny efekt magiczny kończy się.'},
+  {name:'Niewidzialność',struna:'Księga Ech',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'Scena',opis:'Cel niewidoczny do końca sceny lub do ataku/zaklęcia.'},
+  {name:'Lot',struna:'Księga Ech',ksiega:'II',koszt_pp:3,typ:'efektowe',cdr:'Scena',opis:'Cel lata z normalną prędkością do końca sceny. Wymaga koncentracji.'},
+];
+function TabAbilities({c, set}) {
+  const [mode,setMode]=useState('list'); // list | custom
+  const [f,setF]=useState({name:'',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:''});
+  const [search,setSearch]=useState('');
+  const zdolnosci=c.zdolnosci||[];
+  const cechy=Array.isArray(c.cechy)?c.cechy:[];
+
+  const addFromCatalog=(item)=>{
+    if(zdolnosci.find(z=>z.name===item.name))return;
+    set('zdolnosci',[...zdolnosci,{...item,id:uid()}]);
+  };
+  const addCustom=()=>{
+    if(!f.name.trim())return;
+    set('zdolnosci',[...zdolnosci,{...f,id:uid()}]);
+    setF({name:'',typ:'ofensywna',koszt:'Akcja',cdr:'Scena',opis:''});
+  };
+  const addCecha=(item)=>{
+    if(cechy.find(x=>x.name===item.name))return;
+    set('cechy',[...cechy,{...item,id:uid()}]);
+  };
+
+  const filtered=KATALOG_ZDOLNOSCI.filter(z=>
+    z.name.toLowerCase().includes(search.toLowerCase()) ||
+    z.typ.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredCechy=KATALOG_CECH.filter(c=>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="page">
+      {/* Zdolności aktywne */}
+      <div className="card">
+        <div className="ct">Zdolności specjalne</div>
+        {zdolnosci.length===0 && <p style={{color:'var(--muted)',fontStyle:'italic',fontSize:13,marginBottom:8}}>Brak zdolności</p>}
+        {zdolnosci.map(z=>(
+          <div key={z.id} className="ab-card">
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8}}>
+              <div>
+                <div className="ab-name">{z.name}</div>
+                <div className="ab-tags">
+                  <span className={`tag ${TAG_CLS[z.typ]||'tg'}`}>{z.typ}</span>
+                  <span className="tag tg">{z.koszt}</span>
+                  <span className="tag tg">CDR: {z.cdr}</span>
+                </div>
+              </div>
+              <button className="del" onClick={()=>set('zdolnosci',zdolnosci.filter(x=>x.id!==z.id))}>×</button>
+            </div>
+            {z.opis && <div className="ab-desc">{z.opis}</div>}
+          </div>
+        ))}
+        <div className="sep"/>
+        <div style={{display:'flex',gap:8,marginBottom:12}}>
+          <button className={`btn bsm ${mode==='list'?'bp':'bg'}`} onClick={()=>setMode('list')}>Z katalogu</button>
+          <button className={`btn bsm ${mode==='custom'?'bp':'bg'}`} onClick={()=>setMode('custom')}>Własna</button>
+        </div>
+        {mode==='list' && (
+          <div>
+            <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Szukaj zdolności…" style={{marginBottom:10}}/>
+            <div style={{maxHeight:300,overflowY:'auto'}}>
+              {filtered.map(item=>{
+                const added=zdolnosci.find(z=>z.name===item.name);
+                return (
+                  <div key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,color:added?'var(--muted)':'var(--cream)'}}>{item.name}</div>
+                      <div className="mono" style={{fontSize:9,color:'var(--muted)'}}>{item.typ} · {item.koszt} · CDR {item.cdr}</div>
+                    </div>
+                    <button className={`btn bsm ${added?'bg':'bp'}`} onClick={()=>addFromCatalog(item)} disabled={!!added}>
+                      {added?'✓':'+ Dodaj'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {mode==='custom' && (
+          <div>
+            <div className="g2" style={{marginBottom:8}}>
+              <Field label="Nazwa"><TI value={f.name} onChange={v=>setF({...f,name:v})} placeholder="np. Furia"/></Field>
+              <Field label="Typ"><Sel value={f.typ} options={TYPY_AB} onChange={v=>setF({...f,typ:v})}/></Field>
+            </div>
+            <div className="g2" style={{marginBottom:8}}>
+              <Field label="Koszt"><Sel value={f.koszt} options={['Akcja','Szybka Akcja','Reakcja','Pasywna']} onChange={v=>setF({...f,koszt:v})}/></Field>
+              <Field label="CDR"><TI value={f.cdr} onChange={v=>setF({...f,cdr:v})} placeholder="Scena / Konflikt / 1 runda"/></Field>
+            </div>
+            <div className="fld" style={{marginBottom:8}}><label>Opis efektu</label><TA value={f.opis} onChange={v=>setF({...f,opis:v})} placeholder="Opisz efekt…"/></div>
+            <button className="btn bp bsm" onClick={addCustom}>+ Dodaj zdolność</button>
+          </div>
+        )}
+      </div>
+
+      {/* Cechy */}
+      <div className="card">
+        <div className="ct">Cechy postaci</div>
+        {cechy.length===0 && <p style={{color:'var(--muted)',fontStyle:'italic',fontSize:13,marginBottom:8}}>Brak cech</p>}
+        {cechy.map(ch=>(
+          <div key={ch.id} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'7px 0',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:'var(--gold)',fontFamily:'Cinzel,serif'}}>{ch.name}</div>
+              {ch.opis && <div style={{fontSize:12,color:'rgba(245,240,232,.7)',marginTop:3}}>{ch.opis}</div>}
+            </div>
+            <button className="del" onClick={()=>set('cechy',cechy.filter(x=>x.id!==ch.id))}>×</button>
+          </div>
+        ))}
+        <div className="sep"/>
+        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Szukaj cech…" style={{marginBottom:10}}/>
+        <div style={{maxHeight:250,overflowY:'auto'}}>
+          {filteredCechy.map(item=>{
+            const added=cechy.find(x=>x.name===item.name);
+            return (
+              <div key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:added?'var(--muted)':'var(--cream)'}}>{item.name}</div>
+                  <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{item.opis}</div>
+                </div>
+                <button className={`btn bsm ${added?'bg':'bp'}`} onClick={()=>addCecha(item)} disabled={!!added}>
+                  {added?'✓':'+ Dodaj'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabSpells({c, set}) {
+  const [mode,setMode]=useState('list');
+  const [f,setF]=useState({name:'',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:''});
+  const [search,setSearch]=useState('');
+  const [filterStruna,setFilterStruna]=useState('Wszystkie');
+  const zaklecia=c.zaklecia||[];
+
+  const addFromCatalog=(item)=>{
+    if(zaklecia.find(z=>z.name===item.name))return;
+    set('zaklecia',[...zaklecia,{...item,id:uid()}]);
+  };
+  const addCustom=()=>{
+    if(!f.name.trim())return;
+    set('zaklecia',[...zaklecia,{...f,id:uid()}]);
+    setF({name:'',struna:'Infernum',ksiega:'I',koszt_pp:1,typ:'celowane',cdr:'—',opis:''});
+  };
+
+  const filtered=KATALOG_ZAKLEC.filter(z=>{
+    const matchSearch=z.name.toLowerCase().includes(search.toLowerCase());
+    const matchStruna=filterStruna==='Wszystkie'||z.struna===filterStruna;
+    return matchSearch&&matchStruna;
+  });
+
+  return (
+    <div className="page">
+      <div className="card">
+        <div className="ct">Zaklęcia</div>
+        {zaklecia.length===0 && <p style={{color:'var(--muted)',fontStyle:'italic',fontSize:13,marginBottom:8}}>Brak zaklęć</p>}
+        {zaklecia.map(z=>(
+          <div key={z.id} className="sp-card">
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8}}>
+              <div>
+                <div style={{fontFamily:'Cinzel,serif',fontSize:13,color:STRUNA_COL[z.struna]||'#9B7FE8'}}>{z.name}</div>
+                <div className="sp-meta">{z.struna} · Księga {z.ksiega} · {z.typ} · {z.koszt_pp} PP · CDR {z.cdr}</div>
+              </div>
+              <button className="del" onClick={()=>set('zaklecia',zaklecia.filter(x=>x.id!==z.id))}>×</button>
+            </div>
+            {z.opis && <div className="ab-desc">{z.opis}</div>}
+          </div>
+        ))}
+        <div className="sep"/>
+        <div style={{display:'flex',gap:8,marginBottom:12}}>
+          <button className={`btn bsm ${mode==='list'?'bp':'bg'}`} onClick={()=>setMode('list')}>Z katalogu</button>
+          <button className={`btn bsm ${mode==='custom'?'bp':'bg'}`} onClick={()=>setMode('custom')}>Własne</button>
+        </div>
+        {mode==='list' && (
+          <div>
+            <div className="g2" style={{marginBottom:10}}>
+              <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Szukaj zaklęcia…"/>
+              <Sel value={filterStruna} options={['Wszystkie',...STRUNY]} onChange={v=>setFilterStruna(v)}/>
+            </div>
+            <div style={{maxHeight:350,overflowY:'auto'}}>
+              {filtered.map(item=>{
+                const added=zaklecia.find(z=>z.name===item.name);
+                return (
+                  <div key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,color:added?'var(--muted)':STRUNA_COL[item.struna]||'var(--cream)'}}>{item.name}</div>
+                      <div className="mono" style={{fontSize:9,color:'var(--muted)'}}>Ksg {item.ksiega} · {item.typ} · {item.koszt_pp} PP</div>
+                    </div>
+                    <button className={`btn bsm ${added?'bg':'bp'}`} onClick={()=>addFromCatalog(item)} disabled={!!added}>
+                      {added?'✓':'+ Dodaj'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {mode==='custom' && (
+          <div>
+            <div className="g2" style={{marginBottom:8}}>
+              <Field label="Nazwa"><TI value={f.name} onChange={v=>setF({...f,name:v})} placeholder="np. Kula Ognia"/></Field>
+              <Field label="Struna"><Sel value={f.struna} options={STRUNY} onChange={v=>setF({...f,struna:v})}/></Field>
+            </div>
+            <div className="g4" style={{marginBottom:8}}>
+              <Field label="Księga"><Sel value={f.ksiega} options={['I','II','III','IV']} onChange={v=>setF({...f,ksiega:v})}/></Field>
+              <Field label="PP"><NI value={f.koszt_pp} onChange={v=>setF({...f,koszt_pp:v})} min={0} max={10}/></Field>
+              <Field label="Typ"><Sel value={f.typ} options={['celowane','obszarowe','efektowe']} onChange={v=>setF({...f,typ:v})}/></Field>
+              <Field label="CDR"><TI value={f.cdr} onChange={v=>setF({...f,cdr:v})} placeholder="—"/></Field>
+            </div>
+            <div className="fld" style={{marginBottom:8}}><label>Opis efektu</label><TA value={f.opis} onChange={v=>setF({...f,opis:v})} placeholder="Co robi zaklęcie…"/></div>
+            <button className="btn bp bsm" onClick={addCustom}>+ Dodaj zaklęcie</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabEquipment({c, set}) {
+  const [f,setF]=useState({name:'',slots:1,opis:''});
+  const ekwipunek=c.ekwipunek||[];
+  const slotMax=6+Math.max(0,modN(c.budowa));
+  const slotUsed=ekwipunek.reduce((s,e)=>s+(+e.slots||1),0);
+  const pct=Math.min(100,(slotUsed/slotMax)*100);
+  const bron_dom=c.bron_dominujaca||{name:'',opis:''};
+  const bron_nie=c.bron_niedominujaca||{name:'',opis:''};
+  const pancerz=c.pancerz||{name:'',kp_bonus:0,opis:''};
+  return (
+    <div className="page">
+      {/* Weapon slots */}
+      <div className="card">
+        <div className="ct">Broń</div>
+        <div className="g2" style={{marginBottom:12}}>
+          <div>
+            <div className="mono" style={{fontSize:9,color:'var(--gold)',marginBottom:6}}>RĘKA DOMINUJĄCA</div>
+            <div className="g2" style={{gap:8}}>
+              <Field label="Broń"><TI value={bron_dom.name} onChange={v=>set('bron_dominujaca',{...bron_dom,name:v})} placeholder="np. Miecz długi"/></Field>
+              <Field label="Notatka / obrażenia"><TI value={bron_dom.opis} onChange={v=>set('bron_dominujaca',{...bron_dom,opis:v})} placeholder="np. 1k8 cięte"/></Field>
+            </div>
+          </div>
+          <div>
+            <div className="mono" style={{fontSize:9,color:'var(--muted)',marginBottom:6}}>RĘKA NIEDOMINUJĄCA</div>
+            <div className="g2" style={{gap:8}}>
+              <Field label="Broń"><TI value={bron_nie.name} onChange={v=>set('bron_niedominujaca',{...bron_nie,name:v})} placeholder="np. Tarcza / Nóż"/></Field>
+              <Field label="Notatka / efekt"><TI value={bron_nie.opis} onChange={v=>set('bron_niedominujaca',{...bron_nie,opis:v})} placeholder="np. +2 KP / 1k4"/></Field>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Armor slot */}
+      <div className="card">
+        <div className="ct">Pancerz</div>
+        <div className="g3">
+          <Field label="Pancerz"><TI value={pancerz.name} onChange={v=>set('pancerz',{...pancerz,name:v})} placeholder="np. Kolczuga"/></Field>
+          <Field label="Bonus KP"><NI value={pancerz.kp_bonus} onChange={v=>set('pancerz',{...pancerz,kp_bonus:v})} min={0} max={20}/></Field>
+          <Field label="Notatka"><TI value={pancerz.opis} onChange={v=>set('pancerz',{...pancerz,opis:v})} placeholder="np. Ciężki, −1 do ZRE"/></Field>
+        </div>
+        <div className="mono" style={{fontSize:9,color:'var(--muted)',marginTop:8}}>Pancerz nie wlicza się do slotów ekwipunku</div>
+      </div>
+
+      {/* General equipment */}
+      <div className="card">
+        <div className="ct">Ekwipunek ogólny</div>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+          <span className="mono" style={{fontSize:9,color:'var(--muted)'}}>SLOTY</span>
+          <span className="mono" style={{fontSize:11,color:slotUsed>slotMax?'var(--red)':'var(--cream)'}}>{slotUsed} / {slotMax}</span>
+        </div>
+        <div className="slots-bar" style={{marginBottom:12}}>
+          <div className="slots-fill" style={{width:pct+'%',background:pct>100?'var(--red)':undefined}}/>
+        </div>
+        {ekwipunek.length===0 && <p style={{color:'var(--muted)',fontStyle:'italic',fontSize:13,marginBottom:8}}>Brak przedmiotów</p>}
+        {ekwipunek.map(e=>(
+          <div key={e.id} className="eq-row">
+            <span style={{flex:1,fontSize:13}}>{e.name}</span>
+            {e.opis && <span style={{flex:1,paddingLeft:8,fontSize:12,color:'var(--muted)',fontStyle:'italic'}}>{e.opis}</span>}
+            <span className="mono" style={{fontSize:10,color:'var(--muted)',whiteSpace:'nowrap'}}>{e.slots===0.5||e.slots==='0.5'?'½':e.slots} slot{+e.slots>1?'y':''}</span>
+            <button className="del" onClick={()=>set('ekwipunek',ekwipunek.filter(x=>x.id!==e.id))}>×</button>
+          </div>
+        ))}
+        <div className="sep"/>
+        <div className="g3" style={{marginBottom:8}}>
+          <div style={{gridColumn:'span 2'}}>
+            <Field label="Nazwa"><TI value={f.name} onChange={v=>setF({...f,name:v})} placeholder="np. Lina, Pochodnia x3"/></Field>
+          </div>
+          <Field label="Sloty">
+            <Sel value={''+f.slots} options={[{v:'0.5',l:'½'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'}]} onChange={v=>setF({...f,slots:+v})}/>
+          </Field>
+        </div>
+        <div className="fld" style={{marginBottom:8}}><label>Notatka</label><TI value={f.opis} onChange={v=>setF({...f,opis:v})} placeholder="np. 5 użyć, leczy 1k4 PW"/></div>
+        <button className="btn bp bsm" onClick={()=>{
+          if(!f.name.trim())return;
+          set('ekwipunek',[...ekwipunek,{...f,id:uid()}]);
+          setF({name:'',slots:1,opis:''});
+        }}>+ Dodaj przedmiot</button>
+      </div>
+    </div>
+  );
+}
+
+function TabNotes({c, set}) {
+  return (
+    <div className="page">
+      <div className="card">
+        <div className="ct">Notatki z sesji</div>
+        <TA value={c.notatki} onChange={v=>set('notatki',v)} placeholder="Notatki, zadania, ważne NPC, wskazówki, sekrety…" minH={350}/>
+      </div>
+    </div>
+  );
+}
+
+// ── GM VIEW ───────────────────────────────────────────────────────────────────
+function GMView({session, chars}) {
+  const list = Object.values(chars||{});
+  return (
+    <div className="page">
+      <div className="ct" style={{marginBottom:16}}>Widok MG — Sesja: {session}</div>
+      <div className="gm-grid">
+        {list.length===0 && (
+          <div style={{gridColumn:'1/-1',textAlign:'center',padding:'60px 20px',color:'var(--muted)'}}>
+            <div style={{fontSize:36,marginBottom:12}}>⏳</div>
+            <div>Czekam na graczy…</div>
+            <div style={{marginTop:8}}>Podeślij im kod: <strong style={{color:'var(--gold)'}}>{session}</strong></div>
+          </div>
+        )}
+        {list.map(c=>{
+          const pwPct=Math.max(0,Math.min(100,(c.pw/Math.max(1,c.pwMax))*100));
+          const ppPct=Math.max(0,Math.min(100,(c.pp/Math.max(1,c.ppMax))*100));
+          const rany=c.rany||[];
+          return (
+            <div key={c.id} className="gm-card">
+              <div className="gm-name">{c.name}</div>
+              <div className="gm-sub">{c.rasa} · {c.klasa} · Poz.{c.poziom}{c.patron?' · '+c.patron:''}</div>
+              <div style={{marginBottom:8}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span className="mono" style={{fontSize:9,color:'var(--muted)'}}>PW</span>
+                  <span className="mono" style={{color:'var(--red)',fontSize:11}}>{c.pw}/{c.pwMax}</span>
+                </div>
+                <div className="bar-wrap" style={{height:8}}><div className="bar-fill bar-pw" style={{width:pwPct+'%'}}/></div>
+              </div>
+              <div style={{marginBottom:8}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span className="mono" style={{fontSize:9,color:'var(--muted)'}}>PP</span>
+                  <span className="mono" style={{color:'var(--purple)',fontSize:11}}>{c.pp}/{c.ppMax}</span>
+                </div>
+                <div className="bar-wrap" style={{height:8}}><div className="bar-fill bar-pp" style={{width:ppPct+'%'}}/></div>
+              </div>
+              <div className="sep"/>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <span className="mono" style={{fontSize:10}}>KP {c.kp}</span>
+                <span className="mono" style={{fontSize:10}}>AW {(c.aw||0)>=0?'+'+(c.aw||0):(c.aw||0)}</span>
+                {c.mz ? <span className="mono" style={{fontSize:10,color:'var(--purple)'}}>Mz {c.mz}</span> : null}
+              </div>
+              {c.statusy ? <div className="mono" style={{marginTop:6,fontSize:9,color:'var(--gold)'}}>{c.statusy}</div> : null}
+              {rany.length>0 && <div style={{marginTop:6}}>
+                {rany.map(r=><span key={r.id} className="mono" style={{fontSize:9,color:INJ_COL[r.typ],marginRight:6}}>[{r.typ[0]}] {r.opis}</span>)}
+              </div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── SHEET SHELL ───────────────────────────────────────────────────────────────
+function CharSheet({char, onUpdate}) {
+  const [tab,setTab]=useState('overview');
+  const TABS=[
+    {k:'overview',l:'Postać'},{k:'combat',l:'Walka & Rany'},
+    {k:'skills',l:'Umiejętności'},{k:'abilities',l:'Zdolności'},
+    {k:'spells',l:'Zaklęcia'},{k:'equipment',l:'Ekwipunek'},
+    {k:'notes',l:'Notatki'},
+  ];
+  const set=(k,v)=>onUpdate({...char,[k]:v});
+  return (
+    <>
+      <div className="tabs">
+        {TABS.map(t=><button key={t.k} className={`tab ${tab===t.k?'active':''}`} onClick={()=>setTab(t.k)}>{t.l}</button>)}
+      </div>
+      {tab==='overview' && <TabOverview c={char} set={set}/>}
+      {tab==='combat'   && <TabCombat c={char} set={set}/>}
+      {tab==='skills'   && <TabSkills c={char} set={set}/>}
+      {tab==='abilities'&& <TabAbilities c={char} set={set}/>}
+      {tab==='spells'   && <TabSpells c={char} set={set}/>}
+      {tab==='equipment'&& <TabEquipment c={char} set={set}/>}
+      {tab==='notes'    && <TabNotes c={char} set={set}/>}
+    </>
+  );
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function Login({onJoin}) {
+  const [mode,setMode]=useState(null);
+  const [code,setCode]=useState('');
+  const [name,setName]=useState('');
+  const [player,setPlayer]=useState('');
+  const [newCode]=useState(()=>genCode());
+
+  if(!mode) return (
+    <div className="login-wrap">
+      <div className="login-box">
+        <div className="login-logo">ECHO</div>
+        <p className="login-sub">System kart postaci</p>
+        <button className="btn bp w100" style={{marginBottom:8}} onClick={()=>setMode('new')}>Nowa postać</button>
+        <br/>
+        <button className="btn bg w100" style={{marginBottom:8}} onClick={()=>setMode('join')}>Dołącz do sesji</button>
+        <br/>
+        <button className="btn bg w100" style={{color:'var(--gold)'}} onClick={()=>setMode('gm')}>Widok MG</button>
+      </div>
+    </div>
+  );
+
+  const effectiveCode = mode==='gm' ? (code||newCode) : code;
+  return (
+    <div className="login-wrap">
+      <div className="login-box">
+        <div className="login-logo" style={{fontSize:22,marginBottom:20}}>
+          {mode==='new'?'Nowa postać':mode==='join'?'Dołącz do sesji':'Widok MG'}
+        </div>
+        {mode!=='gm' && <>
+          <div className="fld" style={{marginBottom:8,textAlign:'left'}}>
+            <label>Imię postaci</label>
+            <input type="text" value={name} placeholder="Imię bohatera…" onChange={e=>setName(e.target.value)} autoFocus/>
+          </div>
+          <div className="fld" style={{marginBottom:8,textAlign:'left'}}>
+            <label>Twój nick / imię</label>
+            <input type="text" value={player} placeholder="Imię gracza…" onChange={e=>setPlayer(e.target.value)}/>
+          </div>
+        </>}
+        <div className="fld" style={{marginBottom:16,textAlign:'left'}}>
+          <label>{mode==='gm'?'Kod sesji (podeślij graczom)':'Kod sesji (od MG)'}</label>
+          <input type="text" value={effectiveCode}
+            placeholder={mode==='new'?'Opcjonalny — puste = offline':''}
+            onChange={e=>setCode(e.target.value.toUpperCase())}/>
+        </div>
+        <button className="btn bp w100" style={{marginBottom:8}} onClick={()=>onJoin({
+          type: mode==='gm'?'gm':'player',
+          charName: name||'Postać',
+          playerName: player||'Gracz',
+          code: effectiveCode||'OFFLINE'
+        })}>
+          {mode==='gm'?'Otwórz widok MG':'Wejdź'}
+        </button>
+        <br/>
+        <button className="btn bg w100" onClick={()=>setMode(null)}>← Wstecz</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ROOT APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const saved = lsGet();
+  const [session,setSession]=useState(saved.session||null);
+  const [role,setRole]=useState(saved.role||null);
+  const [charId,setCharId]=useState(saved.charId||null);
+  const [char,setCharState]=useState(saved.char||null);
+  const [allChars,setAllChars]=useState(saved.allChars||(saved.char?{[saved.char.id]:saved.char}:{}));
+  const [syncStatus,setSyncStatus]=useState('offline');
+  const [fbReady,setFbReady]=useState(false);
+  const saveTimeout=useRef(null);
+  const listenerRef=useRef(null);
+  const listenerRefPath=useRef(null);
+
+  // init firebase
+  useEffect(()=>{
+    initFirebase().then(ok=>{
+      setFbReady(ok);
+      if(ok && saved.session && saved.session!=='OFFLINE') {
+        startListen(saved.session, saved.role, saved.charId);
+      }
+    });
+  },[]);
+
+  function startListen(sess, rl, cid) {
+    if(!firebaseDB||!sess||sess==='OFFLINE') return;
+    const path = rl==='gm' ? `sessions/${sess}/chars` : `sessions/${sess}/chars/${cid}`;
+    if(listenerRefPath.current===path) return;
+    if(listenerRef.current) { try{fbOff(fbRef(firebaseDB,listenerRefPath.current),'value',listenerRef.current)}catch{} }
+    listenerRefPath.current=path;
+    listenerRef.current = fbOnValue(fbRef(firebaseDB,path), snap=>{
+      const val=snap.val();
+      if(rl==='gm') setAllChars(val||{});
+      else if(val && val.id===cid) setCharState(val);
+    });
+  }
+
+  function doSave(c, sess) {
+    if(saveTimeout.current) clearTimeout(saveTimeout.current);
+    setSyncStatus('saving');
+    saveTimeout.current=setTimeout(async()=>{
+      lsSave({session:sess||session,role,charId:c.id,char:c,allChars});
+      if(firebaseDB && sess!=='OFFLINE' && sess) {
+        try {
+          await fbSet(fbRef(firebaseDB,`sessions/${sess}/chars/${c.id}`),c);
+          setSyncStatus('saved');
+        } catch(e) { setSyncStatus('offline'); }
+      } else { setSyncStatus('saved'); }
+    },700);
+  }
+
+  function setChar(c) {
+    setCharState(c);
+    setAllChars(prev=>({...prev,[c.id]:c}));
+    doSave(c, session);
+  }
+
+  function handleJoin({type,charName,playerName,code}) {
+    const cid=uid();
+    const c=type==='player'?defChar(charName,playerName,cid):null;
+    setSession(code); setRole(type); setCharId(cid);
+    if(c) setChar(c);
+    lsSave({session:code,role:type,charId:cid,char:c,allChars:c?{[cid]:c}:{}});
+    setTimeout(()=>startListen(code,type,cid),300);
+  }
+
+  function handleLogout() {
+    if(listenerRef.current&&listenerRefPath.current) {
+      try{fbOff(fbRef(firebaseDB,listenerRefPath.current),'value',listenerRef.current)}catch{}
+    }
+    lsSave({});
+    setSession(null);setRole(null);setCharId(null);setCharState(null);setAllChars({});setSyncStatus('offline');
+  }
+
+  if(!session) return <Login onJoin={handleJoin}/>;
+
+  const dotCls='dot'+(syncStatus==='offline'?' offline':syncStatus==='saving'?' saving':'');
+  const copyCode=()=>navigator.clipboard?.writeText(session).catch(()=>{});
+
+  const topbar=(
+    <header className="topbar">
+      <span className="logo">ECHO</span>
+      <div className="topbar-r">
+        <span className={dotCls} title={syncStatus==='saved'?'Zapisano':syncStatus==='saving'?'Zapisywanie…':'Offline — tryb lokalny'}/>
+        <span style={{color:'var(--muted)'}}>SESJA</span>
+        <span className="code-pill" onClick={copyCode} title="Kliknij aby skopiować">{session}</span>
+        <span>{role==='gm'?'⚔ MG':char?.name||''}</span>
+        <button className="btn bg bsm" onClick={handleLogout}>Wyloguj</button>
+      </div>
+    </header>
+  );
+
+  return (
+    <>
+      {topbar}
+      {role==='gm'
+        ? <GMView session={session} chars={allChars}/>
+        : char
+          ? <CharSheet char={char} onUpdate={setChar}/>
+          : null
+      }
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
