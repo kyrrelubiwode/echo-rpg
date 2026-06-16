@@ -7,6 +7,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyDuNM-DFEDpfmPgipVWSSPIiRZA5vI6Izc",
+    authDomain: "echo-7e5e3.firebaseapp.com",
+    databaseURL: "https://echo-7e5e3-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "echo-7e5e3",
+    storageBucket: "echo-7e5e3.firebasestorage.app",
+    messagingSenderId: "404116068244",
+    appId: "1:404116068244:web:1770484d15d27866b6a181",
+  });
+  window.firebaseDB = firebase.database();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{--ink:#1C1C2E;--gold:#C9A84C;--gold2:#8B6914;--cream:#F5F0E8;--muted:#6B6580;--panel:#252538;--border:rgba(201,168,76,0.25);--red:#C84B4B;--purple:#7B5FC0}
@@ -95,33 +109,19 @@ textarea{resize:vertical;min-height:70px}
 <script type="text/babel">
 const {useState, useEffect, useRef, useCallback} = React;
 
-// ── FIREBASE (loaded dynamically to avoid file:// CORS) ──────────────────────
-let firebaseDB = null;
-let fbSet = null;
-let fbRef = null;
-let fbOnValue = null;
-let fbOff = null;
-
-async function initFirebase() {
+// ── FIREBASE HELPERS (using compat SDK loaded in <head>) ─────────────────────
+function fbSave(path, data) {
   try {
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js");
-    const { getDatabase, ref, set, onValue, off } = await import("https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js");
-    const app = initializeApp({
-      apiKey: "AIzaSyDuNM-DFEDpfmPgipVWSSPIiRZA5vI6Izc",
-      authDomain: "echo-7e5e3.firebaseapp.com",
-      databaseURL: "https://echo-7e5e3-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "echo-7e5e3",
-      storageBucket: "echo-7e5e3.firebasestorage.app",
-      messagingSenderId: "404116068244",
-      appId: "1:404116068244:web:1770484d15d27866b6a181",
-    });
-    firebaseDB = getDatabase(app);
-    fbSet = set; fbRef = ref; fbOnValue = onValue; fbOff = off;
-    return true;
-  } catch(e) {
-    console.warn('Firebase unavailable (file:// mode), using localStorage only', e);
-    return false;
-  }
+    return window.firebaseDB.ref(path).set(data);
+  } catch(e) { return Promise.reject(e); }
+}
+function fbListen(path, cb) {
+  try {
+    return window.firebaseDB.ref(path).on('value', snap => cb(snap.val()));
+  } catch(e) { return null; }
+}
+function fbUnlisten(path) {
+  try { window.firebaseDB.ref(path).off(); } catch(e) {}
 }
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -975,29 +975,23 @@ function App() {
   const [char,setCharState]=useState(saved.char||null);
   const [allChars,setAllChars]=useState(saved.allChars||(saved.char?{[saved.char.id]:saved.char}:{}));
   const [syncStatus,setSyncStatus]=useState('offline');
-  const [fbReady,setFbReady]=useState(false);
   const saveTimeout=useRef(null);
-  const listenerRef=useRef(null);
   const listenerRefPath=useRef(null);
 
-  // init firebase
+  // init firebase listener on mount
   useEffect(()=>{
-    initFirebase().then(ok=>{
-      setFbReady(ok);
-      if(ok && saved.session && saved.session!=='OFFLINE') {
-        startListen(saved.session, saved.role, saved.charId);
-      }
-    });
+    if(saved.session && saved.session!=='OFFLINE') {
+      startListen(saved.session, saved.role, saved.charId);
+    }
   },[]);
 
   function startListen(sess, rl, cid) {
-    if(!firebaseDB||!sess||sess==='OFFLINE') return;
+    if(!window.firebaseDB||!sess||sess==='OFFLINE') return;
     const path = rl==='gm' ? `sessions/${sess}/chars` : `sessions/${sess}/chars/${cid}`;
     if(listenerRefPath.current===path) return;
-    if(listenerRef.current) { try{fbOff(fbRef(firebaseDB,listenerRefPath.current),'value',listenerRef.current)}catch{} }
+    if(listenerRefPath.current) fbUnlisten(listenerRefPath.current);
     listenerRefPath.current=path;
-    listenerRef.current = fbOnValue(fbRef(firebaseDB,path), snap=>{
-      const val=snap.val();
+    fbListen(path, val=>{
       if(rl==='gm') setAllChars(val||{});
       else if(val && val.id===cid) setCharState(val);
     });
@@ -1008,13 +1002,19 @@ function App() {
     setSyncStatus('saving');
     saveTimeout.current=setTimeout(async()=>{
       lsSave({session:sess||session,role,charId:c.id,char:c,allChars});
-      if(firebaseDB && sess!=='OFFLINE' && sess) {
+      const s = sess||session;
+      if(window.firebaseDB && s && s!=='OFFLINE') {
         try {
-          await fbSet(fbRef(firebaseDB,`sessions/${sess}/chars/${c.id}`),c);
+          await fbSave(`sessions/${s}/chars/${c.id}`, c);
           setSyncStatus('saved');
-        } catch(e) { setSyncStatus('offline'); }
-      } else { setSyncStatus('saved'); }
-    },700);
+        } catch(e) {
+          console.error('Firebase save error:', e);
+          setSyncStatus('offline');
+        }
+      } else {
+        setSyncStatus('saved');
+      }
+    },400);
   }
 
   function setChar(c) {
@@ -1033,9 +1033,7 @@ function App() {
   }
 
   function handleLogout() {
-    if(listenerRef.current&&listenerRefPath.current) {
-      try{fbOff(fbRef(firebaseDB,listenerRefPath.current),'value',listenerRef.current)}catch{}
-    }
+    if(listenerRefPath.current) fbUnlisten(listenerRefPath.current);
     lsSave({});
     setSession(null);setRole(null);setCharId(null);setCharState(null);setAllChars({});setSyncStatus('offline');
   }
